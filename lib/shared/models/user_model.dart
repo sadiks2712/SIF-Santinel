@@ -104,6 +104,18 @@ class UserModel {
       login = DateTime.tryParse(map['lastLogin']);
     }
 
+    final status = map['status']?.toString().toLowerCase();
+    final bool isUserActive;
+    if (status == 'pending') {
+      isUserActive = false;
+    } else if (map['isActive'] != null) {
+      isUserActive = map['isActive'] == true;
+    } else if (map['is_active'] != null) {
+      isUserActive = map['is_active'] == true;
+    } else {
+      isUserActive = true;
+    }
+
     return UserModel(
       id: docId ?? map['uid'] ?? map['id'] ?? '',
       employeeId: map['employeeId'] ?? map['employee_id'] ?? 'OIL-EMP-0000',
@@ -112,7 +124,7 @@ class UserModel {
       role: map['role'] ?? 'hse_officer',
       assignedSites: sites.isNotEmpty ? sites : ['Duliajan Main Complex'],
       department: map['department'] ?? 'HSE Department',
-      isActive: map['isActive'] ?? map['is_active'] ?? true,
+      isActive: isUserActive,
       avatarUrl: map['avatarUrl'] ?? '',
       createdAt: created,
       lastLogin: login,
@@ -170,9 +182,21 @@ class UserModel {
     isActive: true,
   );
 
+  static const UserModel defaultPendingUser = UserModel(
+    id: 'USR-REQ-099',
+    employeeId: 'OIL-EMP-4421',
+    name: 'Vikram Chetia (Pending Review)',
+    email: 'v_chetia@oilindia.in',
+    role: 'engineer',
+    assignedSites: ['Duliajan Main Complex'],
+    department: 'Drilling & Well Operations',
+    isActive: false,
+  );
+
   static const List<UserModel> sampleUsers = [
     defaultAdministrator,
     defaultSafetyOfficer,
+    defaultPendingUser,
     UserModel(
       id: 'USR-OIL-102',
       employeeId: 'OIL-EMP-1823',

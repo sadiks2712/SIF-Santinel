@@ -15,6 +15,7 @@ import '../../../shared/models/site_model.dart';
 import '../../../shared/widgets/oil_header.dart';
 import '../../../shared/widgets/enterprise_card.dart';
 import '../../../shared/widgets/custom_button.dart';
+import '../../auth/data/auth_repository.dart';
 import '../../auth/providers/auth_provider.dart';
 import '../../reports/providers/reports_provider.dart';
 
@@ -89,6 +90,13 @@ class _AdminScreenState extends ConsumerState<AdminScreen> with SingleTickerProv
               return UserModel.fromMap(doc.data(), docId: doc.id);
             }).toList();
 
+            // Merge any pending memory requests submitted in this session
+            for (final p in AuthRepository.pendingMemoryRequests) {
+              if (!liveUsers.any((u) => u.id == p.id || u.employeeId == p.employeeId || u.email.toLowerCase() == p.email.toLowerCase())) {
+                liveUsers.insert(0, p);
+              }
+            }
+
             setState(() {
               _managedUsers = liveUsers;
               _isLoadingUsers = false;
@@ -106,7 +114,13 @@ class _AdminScreenState extends ConsumerState<AdminScreen> with SingleTickerProv
             _isLoadingUsers = false;
             _isFirestoreConnected = false;
             if (_managedUsers.isEmpty) {
-              _managedUsers = List.from(UserModel.sampleUsers);
+              final fallback = List<UserModel>.from(UserModel.sampleUsers);
+              for (final p in AuthRepository.pendingMemoryRequests) {
+                if (!fallback.any((u) => u.id == p.id || u.employeeId == p.employeeId)) {
+                  fallback.insert(0, p);
+                }
+              }
+              _managedUsers = fallback;
             }
           });
         },
@@ -117,7 +131,13 @@ class _AdminScreenState extends ConsumerState<AdminScreen> with SingleTickerProv
         setState(() {
           _isLoadingUsers = false;
           _isFirestoreConnected = false;
-          _managedUsers = List.from(UserModel.sampleUsers);
+          final fallback = List<UserModel>.from(UserModel.sampleUsers);
+          for (final p in AuthRepository.pendingMemoryRequests) {
+            if (!fallback.any((u) => u.id == p.id || u.employeeId == p.employeeId)) {
+              fallback.insert(0, p);
+            }
+          }
+          _managedUsers = fallback;
         });
       }
     }

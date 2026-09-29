@@ -45,13 +45,20 @@ service cloud.firestore {
       // User can read their own profile, administrators & directors can read all profiles
       allow read: if isAuthenticated() && (request.auth.uid == uid || isAdministrator() || isHseDirectorate());
       
-      // Only Administrator can create or update user roles & site assignments
-      allow create: if isAdministrator();
+      // Administrator can create any user; new registering users can create their own pending profile (isActive == false)
+      allow create: if isAdministrator() || (isAuthenticated() && request.auth.uid == uid && request.resource.data.isActive == false);
       allow update: if isAdministrator() || 
         (isAuthenticated() && request.auth.uid == uid && 
          // User can only update lastLogin / avatar, never their own role or active status
          !request.resource.data.diff(resource.data).affectedKeys().hasAny(['role', 'isActive', 'assignedSites', 'employeeId']));
       allow delete: if isAdministrator();
+    }
+
+    // --- 1B. ACCESS REQUESTS ---
+    match /access_requests/{reqId} {
+      allow read: if isAuthenticated() && (request.auth.uid == reqId || isAdministrator() || isHseDirectorate());
+      allow create: if isAuthenticated();
+      allow update, delete: if isAdministrator();
     }
 
     // --- 2. ROLES CONFIGURATION ---

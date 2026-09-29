@@ -105,6 +105,11 @@ class AuthRepository {
   static const String preconfiguredAdminPassword = 'admin@1224';
   static const String preconfiguredAdminEmpId = 'OIL-ADMIN-001';
 
+  /// In-memory queue for offline / immediate pending access requests
+  static final List<UserModel> pendingMemoryRequests = [
+    UserModel.defaultPendingUser,
+  ];
+
   FirebaseAuth get _firebaseAuth => FirebaseAuth.instance;
   FirebaseFirestore get _firestore => FirebaseFirestore.instance;
 
@@ -601,6 +606,21 @@ class AuthRepository {
     } catch (e) {
       debugPrint('Firestore requestAccess write error: $e');
     }
+
+    // Add to in-memory pending requests for immediate UI feedback
+    final pendingModel = UserModel(
+      id: targetUid,
+      employeeId: cleanEmpId,
+      name: cleanName,
+      email: cleanEmail,
+      role: role,
+      assignedSites: [requestedSite],
+      department: department,
+      isActive: false,
+      createdAt: DateTime.now(),
+    );
+    pendingMemoryRequests.removeWhere((u) => u.employeeId == cleanEmpId || u.email == cleanEmail);
+    pendingMemoryRequests.insert(0, pendingModel);
 
     _auditService.logEvent(
       type: AuditEventType.securityConfigChanged,

@@ -486,11 +486,16 @@ class AuthNotifier extends StateNotifier<AuthState> {
   void switchRole(String roleName) {
     final targetRole = UserRole.tryFromString(roleName);
     final user = UserModel.sampleUsers.firstWhere(
-      (u) => (targetRole != null && u.userRole == targetRole) ||
-          u.role.toLowerCase() == roleName.toLowerCase() ||
-          u.userRole.displayName.toLowerCase().contains(roleName.toLowerCase()) ||
-          u.userRole.key.toLowerCase() == roleName.toLowerCase(),
-      orElse: () => UserModel.defaultSafetyOfficer,
+      (u) =>
+          u.isActive &&
+          ((targetRole != null && u.userRole == targetRole) ||
+              u.role.toLowerCase() == roleName.toLowerCase() ||
+              u.userRole.displayName.toLowerCase().contains(roleName.toLowerCase()) ||
+              u.userRole.key.toLowerCase() == roleName.toLowerCase()),
+      orElse: () => UserModel.sampleUsers.firstWhere(
+        (u) => (targetRole != null && u.userRole == targetRole),
+        orElse: () => UserModel.defaultSafetyOfficer,
+      ),
     );
     setUser(user);
   }
